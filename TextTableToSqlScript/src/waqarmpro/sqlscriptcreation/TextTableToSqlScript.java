@@ -1,7 +1,8 @@
 /*Class: TextTableToSqlScript
  * Author: Waqar Mahmood
- * Date: December 22, 2013
- * Version: 1.0
+ * Version: 1.1
+ * Date of Rev 1.0: December 22, 2013
+ * Date of current revision: December 27, 2013
  */
 
 /* Purpose: 
@@ -43,7 +44,7 @@
  * Planned Revisions:
  * 
  * 1. Allow entry of table name via UI if table name not same as text file.
- * 2. Allow file extensions of any length.
+ * 2. Added in Revision 1.1: Allow file extensions of any length.
  * 3. Have code scan text file and identify delimiter.
  * 3b. Allow more than one tab.
  * 4. Accommodate for tables that do not have a header, or have Table name also.
@@ -60,6 +61,11 @@
  * 13. Allow option to append to existing script file?
  * 14. Review file I/O efficiency for write operation
  * 15. Tolerate click on cancel in file dialog box
+ */
+
+/*Changes Effected Through This Revision
+ * Prior revision assumed a 3 letter file extension when cutting of the extension to obtain the table name.
+ * This revision will work with any length file extension--it will accommodate .xlsx
  */
 
 
@@ -106,7 +112,7 @@ public class TextTableToSqlScript {
 			super();
 			this.folderPath = folderPath;
 			this.fileName = fileName;
-			this.tableName = this.fileName.substring(0, this.fileName.length()-4);
+			this.tableName = this.fileName.substring(0, (this.fileName.length()-this.fileName.lastIndexOf('.')));
 			this.columnTypePattern = columnTypePattern;
 			this.delimiter = delimiter;
 		}
@@ -118,7 +124,7 @@ public class TextTableToSqlScript {
 				fileChooser.showOpenDialog(null);
 				this.folderPath = fileChooser.getSelectedFile().getParent();
 				this.fileName = fileChooser.getSelectedFile().getName();
-				this.tableName = this.fileName.substring(0, this.fileName.length()-4);
+				this.tableName = this.fileName.substring(0, (this.fileName.length()-this.fileName.lastIndexOf('.')));
 				this.columnTypePattern = columnTypePattern;
 				this.delimiter = delimiter;
 			}
