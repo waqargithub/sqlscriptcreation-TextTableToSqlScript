@@ -1,3 +1,9 @@
+/*Class: TextTableToSqlScript
+ * Author: Waqar Mahmood
+ * Date: December 22, 2013
+ * Version: 1.0
+ */
+
 /* Purpose: 
  * This program accepts a file that has text data for a table and creates
  * the SQL script needed to load these values into a database table.
@@ -55,6 +61,8 @@
  * 14. Review file I/O efficiency for write operation
  * 15. Tolerate click on cancel in file dialog box
  */
+
+
 
 package waqarmpro.sqlscriptcreation;
 
