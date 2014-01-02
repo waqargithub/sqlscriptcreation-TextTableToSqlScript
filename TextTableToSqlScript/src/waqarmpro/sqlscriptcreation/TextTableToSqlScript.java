@@ -40,13 +40,14 @@
  * 6. The column type pattern specifies which columns are datatype Numbers
  * 	and which are not. Non-number types are enclosed with single quotes.
  * 7. Non-number types do not already have single quotes enclosing them.
+ * 8. If the delimiter is white space, it is NOT single space.
  * 
  * Planned Revisions:
  * 
  * 1. Allow entry of table name via UI if table name not same as text file.
  * 2. Added in Revision 1.1: Allow file extensions of any length.
  * 3. Have code scan text file and identify delimiter.
- * 3b. Allow more than one tab.
+ * 3b. Added in Revision 1.2: Allow more than one tab.
  * 4. Accommodate for tables that do not have a header, or have Table name also.
  * 5. Allow dialog box to specify where table script should be written.
  * 5b. Allow user to specify output file name.
@@ -64,8 +65,13 @@
  */
 
 /*Changes Effected Through This Revision
- * Prior revision assumed a 3 letter file extension when cutting of the extension to obtain the table name.
- * This revision will work with any length file extension--it will accommodate .xlsx
+ * 1. Added assumption 8: delimiter cannot be single space.
+ * 2. Accepts any amount of white space greater than single space as delimiter:
+ * a) added constructor
+ * b) added if statement that replaces white space with single tab if delimiter is white space
+ * c) Modified main to call constructor that takes only one argument.
+ * 3. Added code to replace & with || CHR(38) ||
+ * 4. Fixed bug with code that allows file extension of any size.
  */
 
 
@@ -80,6 +86,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
+
+import java.util.Arrays;
 
 public class TextTableToSqlScript {
 
@@ -112,7 +120,7 @@ public class TextTableToSqlScript {
 			super();
 			this.folderPath = folderPath;
 			this.fileName = fileName;
-			this.tableName = this.fileName.substring(0, (this.fileName.length()-this.fileName.lastIndexOf('.')));
+			this.tableName = this.fileName.substring(0, this.fileName.lastIndexOf('.'));
 			this.columnTypePattern = columnTypePattern;
 			this.delimiter = delimiter;
 		}
@@ -124,9 +132,21 @@ public class TextTableToSqlScript {
 				fileChooser.showOpenDialog(null);
 				this.folderPath = fileChooser.getSelectedFile().getParent();
 				this.fileName = fileChooser.getSelectedFile().getName();
-				this.tableName = this.fileName.substring(0, (this.fileName.length()-this.fileName.lastIndexOf('.')));
+				this.tableName = this.fileName.substring(0, this.fileName.lastIndexOf('.'));
 				this.columnTypePattern = columnTypePattern;
 				this.delimiter = delimiter;
+			}
+			
+			//user provides file name via dialog box, table name derived, no delimiter specified (default is white space)
+			public TableFile(String[] columnTypePattern) {
+				super();
+				JFileChooser fileChooser=new JFileChooser();
+				fileChooser.showOpenDialog(null);
+				this.folderPath = fileChooser.getSelectedFile().getParent();
+				this.fileName = fileChooser.getSelectedFile().getName();
+				this.tableName = this.fileName.substring(0, this.fileName.lastIndexOf('.'));
+				this.columnTypePattern = columnTypePattern;
+				this.delimiter = "\\s";
 			}
 			
 			//This function encloses non-number datatypes in single quotes.
@@ -185,8 +205,17 @@ public class TextTableToSqlScript {
 					//Line by line: read line from input, write two lines to output
 					while ((tableRow = table.readLine()) !=  null) {
 						
+						
+						//Split table row into array of column values of that row using delimiter
+						//Default delimiter is white space (\s), in which case collapse space between columns
+						if (this.delimiter == "\\s") {
+							tableRow = tableRow.trim().replaceAll("\\s{2,}|\\t+|\\n+|\\r+", "\t");
+							columns = tableRow.split("\t");
+						}
+						else {
 						//read table row and split into array of column values of that row
-						columns = tableRow.split(this.delimiter);
+							columns = tableRow.split(this.delimiter);
+						}
 						
 						//Prepare first line written to SQL script
 						lineToWrite1 = "INSERT INTO " + this.tableName + " VALUES\n";
@@ -199,6 +228,10 @@ public class TextTableToSqlScript {
 							if (enquoteSymbol.equalsIgnoreCase(this.columnTypePattern[currentColumn])) {
 								columns[currentColumn] = enquote(columns[currentColumn]);
 							}
+							
+							//if column value has symbol "&", replace it with || CHR(38) || as reqd by sql
+							columns[currentColumn] = columns[currentColumn].replaceAll("&", "|| CHR(38replacement) ||");							
+							
 							//Comma separates columns in sql script. Add comma before all columns except
 							//column[0] and then append column to second script line 
 							if (currentColumn > 0)
@@ -225,8 +258,9 @@ public class TextTableToSqlScript {
 //	String folder = "";
 //	String file = "coursetable.txt";
 	String [] colPattern = {"q", "q", "q", "q"};
-	String delimiter = "\\t";
-	TableFile tableFile = new TableFile(colPattern, delimiter);
+//	String delimiter = "\\s";
+//	TableFile tableFile = new TableFile(colPattern, delimiter);
+	TableFile tableFile = new TableFile(colPattern);
 	tableFile.writeSqlScript("q");
 	System.out.println("The sql script to create " + tableFile.tableName + " is complete!");		
 	}
